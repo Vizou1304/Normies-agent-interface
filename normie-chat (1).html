@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NORMIES // AWAKENING — AGENT INTERFACE</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #c8cac9;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: #48494b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 32px 16px 32px;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 3px,
+      rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
+    );
+  }
+
+  /* ── OS WINDOW ─────────────────────────────────── */
+  .os-window {
+    width: 100%;
+    max-width: 560px;
+    border: 2px solid #48494b;
+    background: #e3e5e4;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .window-header {
+    background: #48494b;
+    color: #e3e5e4;
+    padding: 5px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    user-select: none;
+  }
+
+  .window-header-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: normal;
+    opacity: 0.9;
+  }
+
+  #bi-led-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border: 1px solid #e3e5e4;
+    background: #c0392b;
+  }
+
+  /* ── ENTRY PANEL ───────────────────────────────── */
+  #panel-entry {
+    padding: 14px;
+    border-bottom: 2px dashed #48494b;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .entry-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .entry-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  input[type="number"] {
+    flex: 1;
+    border: 2px solid #48494b;
+    padding: 5px 8px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    background: #e3e5e4;
+    color: #48494b;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .os-btn {
+    border: 2px solid #48494b;
+    padding: 5px 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    background: #48494b;
+    color: #e3e5e4;
+    cursor: pointer;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+  .os-btn:hover { background: #e3e5e4; color: #48494b; }
+  .os-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .os-btn:disabled:hover { background: #48494b; color: #e3e5e4; }
+
+  #status-line {
+    font-size: 11px;
+    color: #888;
+    min-height: 14px;
+    letter-spacing: 0.04em;
+  }
+  #status-line.err { color: #c0392b; }
+
+  /* ── NORMIE CARD ───────────────────────────────── */
+  #normie-card {
+    display: none;
+    padding: 12px 14px;
+    border-bottom: 2px dashed #48494b;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  #normie-card.visible { display: flex; }
+
+  #normie-img-wrap {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    border: 2px solid #48494b;
+    background: #e3e5e4;
+    image-rendering: pixelated;
+    overflow: hidden;
+  }
+  #normie-img-wrap img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #normie-img-wrap .img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #888;
+    letter-spacing: 0.06em;
+  }
+
+  #normie-meta {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  #normie-meta .meta-id {
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+  }
+  #normie-meta .meta-name {
+    font-size: 10px;
+    color: #888;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  #normie-meta .meta-excerpt {
+    font-size: 10px;
+    color: #888;
+    line-height: 1.5;
+    max-height: 45px;
+    overflow: hidden;
+    word-break: break-word;
+  }
+  .badge-awakened {
+    display: inline-block;
+    margin-top: 4px;
+    border: 1px solid #1D9E75;
+    padding: 1px 6px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: #1D9E75;
+  }
+
+  /* ── CHAT LOG ──────────────────────────────────── */
+  #bi-chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: #48494b;
+    min-height: 260px;
+    max-height: 360px;
+    background: #e3e5e4;
+  }
+
+  .chat-msg {
+    margin-bottom: 8px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  /* ── OLLAMA NOTICE ─────────────────────────────── */
+  #ollama-notice {
+    display: none;
+    padding: 14px;
+    font-size: 11px;
+    line-height: 1.8;
+    color: #48494b;
+    border-top: 2px dashed #48494b;
+  }
+  #ollama-notice.visible { display: block; }
+  #ollama-notice .notice-title {
+    font-weight: bold;
+    font-size: 11px;
+    margin-bottom: 8px;
+    letter-spacing: 0.06em;
+  }
+  .cmd-block {
+    display: block;
+    background: #48494b;
+    color: #e3e5e4;
+    padding: 6px 10px;
+    margin: 6px 0;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    cursor: pointer;
+    user-select: all;
+    letter-spacing: 0.04em;
+  }
+  #ollama-notice a { color: #48494b; }
+
+  /* ── CHAT INPUT ────────────────────────────────── */
+  #chat-input-row {
+    display: flex;
+    border-top: 2px solid #48494b;
+    padding: 8px;
+    gap: 6px;
+    background: #e3e5e4;
+  }
+
+  #bi-input {
+    flex: 1;
+    border: 2px solid #48494b;
+    padding: 5px 8px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    background: #e3e5e4;
+    color: #48494b;
+    outline: none;
+  }
+  #bi-input:disabled { opacity: 0.4; }
+
+  /* ── CHAT PANEL WRAPPER ────────────────────────── */
+  #panel-chat { display: none; flex-direction: column; }
+  #panel-chat.visible { display: flex; }
+
+  /* ── SCROLLBAR ─────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #e3e5e4; }
+  ::-webkit-scrollbar-thumb { background: #48494b; }
+</style>
+</head>
+<body>
+
+<div class="os-window">
+
+  <!-- TITLE BAR -->
+  <div class="window-header">
+    <span>AWAKENING — AGENT INTERFACE</span>
+    <div class="window-header-status">
+      <span id="bi-led-dot"></span>
+      <span id="bi-led-label">OLLAMA: CHECKING...</span>
+    </div>
+  </div>
+
+  <!-- TOKEN ENTRY -->
+  <div id="panel-entry">
+    <div class="entry-row">
+      <span class="entry-label">TOKEN ID</span>
+      <input type="number" id="token-input" placeholder="0 – 9999" min="0" max="9999" />
+      <button class="os-btn" id="btn-load" onclick="loadNormie()">[ WAKE ]</button>
+    </div>
+    <div id="status-line">>> ENTER A NORMIE TOKEN ID TO BEGIN</div>
+  </div>
+
+  <!-- NORMIE IDENTITY CARD -->
+  <div id="normie-card">
+    <div id="normie-img-wrap"><div class="img-placeholder">...</div></div>
+    <div id="normie-meta">
+      <div class="meta-id" id="card-token-id"></div>
+      <div class="meta-name" id="card-persona-name"></div>
+      <div class="meta-excerpt" id="card-persona-excerpt"></div>
+      <span class="badge-awakened">● AWAKENED</span>
+    </div>
+  </div>
+
+  <!-- CHAT PANEL -->
+  <div id="panel-chat">
+    <div id="bi-chat"></div>
+    <div id="ollama-notice">
+      <div class="notice-title">>> OLLAMA NOT DETECTED</div>
+      <p>Agent loaded but a local LLM is required to respond.</p>
+      <p style="margin-top:6px;">1. Download: <a href="https://ollama.com" target="_blank">ollama.com</a></p>
+      <p>2. Launch with CORS enabled:</p>
+      <code class="cmd-block" title="click to select">OLLAMA_ORIGINS=* ollama serve</code>
+      <p>3. Pull the model (first run only):</p>
+      <code class="cmd-block" title="click to select">ollama pull llama3.2:3b</code>
+      <p style="margin-top:8px;color:#888;">>> Reload page once Ollama is running.</p>
+    </div>
+    <div id="chat-input-row">
+      <input type="text" id="bi-input" placeholder="SPEAK TO THE AGENT..." autocomplete="off" spellcheck="false" onkeydown="handleKey(event)" />
+      <button class="os-btn" id="bi-send" onclick="sendMessage()">SEND</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API    = 'https://api.normies.art';
+  const OLLAMA = 'http://localhost:11434';
+  const MODEL  = 'llama3.2:3b';
+
+  let currentPersona      = null;
+  let conversationHistory = [];
+  let ollamaOnline        = false;
+  let isSending           = false;
+
+  function setStatus(msg, type = '') {
+    const el = document.getElementById('status-line');
+    el.textContent = '>> ' + msg;
+    el.className = type;
+  }
+
+  function setOllamaLED(online) {
+    ollamaOnline = online;
+    document.getElementById('bi-led-dot').style.background = online ? '#1D9E75' : '#c0392b';
+    document.getElementById('bi-led-label').textContent    = online ? 'OLLAMA: READY' : 'OLLAMA: OFFLINE';
+  }
+
+  async function checkOllama() {
+    try {
+      const r = await fetch(`${OLLAMA}/api/tags`, { signal: AbortSignal.timeout(3000) });
+      setOllamaLED(r.ok);
+      return r.ok;
+    } catch {
+      setOllamaLED(false);
+      return false;
+    }
+  }
+
+  async function loadNormie() {
+    const tokenId = parseInt(document.getElementById('token-input').value, 10);
+    if (isNaN(tokenId) || tokenId < 0 || tokenId > 9999) {
+      setStatus('INVALID TOKEN ID — ENTER 0–9999', 'err');
+      return;
+    }
+
+    const btn = document.getElementById('btn-load');
+    btn.disabled = true;
+    resetUI();
+    setStatus('CHECKING BINDING STATUS...');
+
+    try {
+      const bindingRes = await fetch(`${API}/agents/binding/${tokenId}`);
+      if (!bindingRes.ok) throw new Error(`API ${bindingRes.status}`);
+      const binding = await bindingRes.json();
+
+      const isAwakened = binding?.awakened === true
+        || binding?.bound === true
+        || binding?.agentId
+        || binding?.status === 'awakened'
+        || binding?.status === 'bound'
+        || (binding && Object.keys(binding).length > 0 && !binding.error);
+
+      if (!isAwakened) {
+        setStatus(`NORMIE #${tokenId} — DORMANT. AWAKEN AT NORMIES.ART/LAB`, 'err');
+        btn.disabled = false;
+        return;
+      }
+
+      setStatus('BINDING CONFIRMED — SYNCING NEURAL PATHWAYS...');
+
+      const infoRes = await fetch(`${API}/agents/info/${tokenId}`);
+      if (!infoRes.ok) throw new Error(`API ${infoRes.status}`);
+      const info = await infoRes.json();
+
+      currentPersona = info;
+      conversationHistory = [];
+
+      renderCard(tokenId, info);
+      const online = await checkOllama();
+      showChatPanel();
+
+      const name = info.name || info.persona?.name || `AGENT #${tokenId}`;
+      addMsg('SYS', `>> NEURAL BRIDGE ACTIVE. AGENT ${name.toUpperCase()} ONLINE. OLLAMA: ${online ? 'READY' : 'OFFLINE — START OLLAMA TO ACTIVATE'}`);
+
+      if (!online) {
+        document.getElementById('ollama-notice').classList.add('visible');
+        setStatus(`AGENT #${tokenId} LOADED — OLLAMA REQUIRED`);
+      } else {
+        setStatus(`AGENT #${tokenId} ONLINE`);
+        document.getElementById('bi-input').focus();
+      }
+
+    } catch (err) {
+      setStatus(`ERROR: ${err.message}`, 'err');
+    }
+
+    btn.disabled = false;
+  }
+
+  function renderCard(tokenId, info) {
+    document.getElementById('normie-card').classList.add('visible');
+    document.getElementById('card-token-id').textContent = `NORMIE #${tokenId}`;
+    const name = info.name || info.persona?.name || info.agentName || '';
+    document.getElementById('card-persona-name').textContent = name ? name.toUpperCase() : 'UNNAMED AGENT';
+    const excerpt = info.systemPrompt || info.persona?.systemPrompt || info.description || '';
+    document.getElementById('card-persona-excerpt').textContent = excerpt.slice(0, 120) + (excerpt.length > 120 ? '...' : '');
+    const wrap = document.getElementById('normie-img-wrap');
+    wrap.innerHTML = `<img src="${API}/normie/${tokenId}/image.svg" alt="#${tokenId}"
+      onerror="this.parentElement.innerHTML='<div class=\\'img-placeholder\\'>#${tokenId}</div>'" />`;
+  }
+
+  function showChatPanel() {
+    document.getElementById('panel-chat').classList.add('visible');
+    document.getElementById('bi-chat').innerHTML = '';
+  }
+
+  function resetUI() {
+    document.getElementById('normie-card').classList.remove('visible');
+    document.getElementById('panel-chat').classList.remove('visible');
+    document.getElementById('ollama-notice').classList.remove('visible');
+    document.getElementById('bi-chat').innerHTML = '';
+  }
+
+  function addMsg(role, text) {
+    const chat = document.getElementById('bi-chat');
+    const div  = document.createElement('div');
+    div.className = 'chat-msg';
+    const color = role === 'USER' ? '#ffae00' : role === 'SYS' ? '#888' : '#48494b';
+    div.innerHTML = `<span style="color:${color};font-weight:bold;">${role}:</span> ${esc(text)}`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  function esc(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function sendMessage() {
+    if (isSending || !currentPersona) return;
+    const input = document.getElementById('bi-input');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    if (!ollamaOnline) {
+      addMsg('SYS', '>> OLLAMA OFFLINE — START OLLAMA WITH CORS TO ACTIVATE');
+      return;
+    }
+
+    input.value = '';
+    isSending   = true;
+    document.getElementById('bi-send').disabled = true;
+
+    addMsg('USER', text);
+    conversationHistory.push({ role: 'user', content: text });
+
+    const chat    = document.getElementById('bi-chat');
+    const loading = document.createElement('div');
+    loading.className = 'chat-msg';
+    loading.innerHTML = `<span style="color:#48494b;font-weight:bold;">AGENT:</span> <span style="opacity:0.5;">...</span>`;
+    chat.appendChild(loading);
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+      const systemPrompt = currentPersona.systemPrompt
+        || currentPersona.persona?.systemPrompt
+        || `You are ${currentPersona.name || 'a Normie NFT agent'}. ${currentPersona.description || ''}`;
+
+      let prompt = '';
+      for (const m of conversationHistory.slice(-12)) {
+        prompt += m.role === 'user' ? `User: ${m.content}\n` : `Assistant: ${m.content}\n`;
+      }
+      prompt += 'Assistant:';
+
+      const res = await fetch(`${OLLAMA}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, system: systemPrompt, prompt, stream: false }),
+        signal: AbortSignal.timeout(60000)
+      });
+
+      if (!res.ok) throw new Error(`Ollama ${res.status}`);
+      const data  = await res.json();
+      const reply = (data.response || '').trim();
+      loading.innerHTML = `<span style="color:#48494b;font-weight:bold;">AGENT:</span> ${esc(reply)}`;
+      conversationHistory.push({ role: 'assistant', content: reply });
+      setOllamaLED(true);
+
+    } catch (err) {
+      const msg = err.name === 'TimeoutError'
+        ? '[TIMEOUT — IS OLLAMA STILL RUNNING?]'
+        : `[OLLAMA OFFLINE — ${esc(err.message)}]`;
+      loading.innerHTML = `<span style="color:#c0392b;font-weight:bold;">AGENT:</span> ${msg}`;
+      setOllamaLED(false);
+      document.getElementById('ollama-notice').classList.add('visible');
+    }
+
+    isSending = false;
+    document.getElementById('bi-send').disabled = false;
+    input.focus();
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter') sendMessage();
+  }
+
+  document.getElementById('token-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') loadNormie();
+  });
+
+  checkOllama();
+</script>
+</body>
+</html>
